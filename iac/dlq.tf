@@ -13,7 +13,7 @@ resource "aws_sns_topic" "dlq_alarm_topic" {
 resource "aws_sns_topic_subscription" "dlq_email" {
   topic_arn = aws_sns_topic.dlq_alarm_topic.arn
   protocol  = "email"
-  endpoint  = "wilsondanix@gmail.com" 
+  endpoint  = "bruluan480@gmail.com" 
 }
 
 # Alarma que vigila si hay algo en la dlq

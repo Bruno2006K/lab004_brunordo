@@ -30,7 +30,7 @@ resource "aws_lambda_function" "crop_lambda" {
 # Path del codigo
 data "archive_file" "crop_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/lambdas/crop"
+  source_dir  = "${path.module}/../src/lambda/crop"
   output_path = "${path.module}/crop_function.zip"
 }
 
