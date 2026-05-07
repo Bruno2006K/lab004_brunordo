@@ -1,9 +1,10 @@
-# HTTP API BASICO 
+
+# Configuración central del api gateway
 resource "aws_apigatewayv2_api" "http_api" {
-  name          = "${var.project_name}-${local.env}"
+  name          = "${var.project_name}-${terraform.workspace}"
   protocol_type = "HTTP"
 
-  # CONFIGURACION DE \nCors
+  # Cors configuration
   cors_configuration {
     allow_origins = ["*"] 
     allow_methods = ["POST", "OPTIONS"] 
@@ -13,18 +14,16 @@ resource "aws_apigatewayv2_api" "http_api" {
 }
 
 
-# INTEGRACION \nProtocol format 2.0
+# Protocol format 2.0
 resource "aws_apigatewayv2_integration" "lambda_integration" {
   api_id           = aws_apigatewayv2_api.http_api.id
   integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.upload.invoke_arn
-
-  # CONFIGURACION DE \nPayload 
+  integration_uri  = aws_lambda_function.upload_lambda.invoke_arn 
   payload_format_version = "2.0" 
 }
 
 
-# CONFIGURACION DE \nRoute para POST /upload
+# Route para POST /upload
 resource "aws_apigatewayv2_route" "upload_route" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = "POST /upload"
@@ -32,19 +31,19 @@ resource "aws_apigatewayv2_route" "upload_route" {
 }
 
 
-# CONFIGURACION DE \nStage 
+# STAGE 
 resource "aws_apigatewayv2_stage" "api_stage" {
   api_id      = aws_apigatewayv2_api.http_api.id
   name        = "$default"
   auto_deploy = true
 
-  # CONFIGURACION DE \nThrottling
+  # Configuración del Throttling
   default_route_settings {
     throttling_burst_limit = 5000
     throttling_rate_limit  = 10000
   }
 
-  # CONFIGURACION DE \nAccess logs para Cloudwatch
+  # Access logs para Cloudwatch
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_logs.arn
     format          = jsonencode({
@@ -58,9 +57,9 @@ resource "aws_apigatewayv2_stage" "api_stage" {
   }
 }
 
-# LOG GROUP para la API
+# Log group
+
 resource "aws_cloudwatch_log_group" "api_logs" {
-  # Nombre estandarizado siguiendo tu estructura de carpetas
-  name              = "/aws/vendedlogs/${var.project_name}-${local.env}-api-logs"
-  retention_in_days = 7 # Aumentado a 7 para tener algo de historial
+  name              = "/aws/apigateway/${var.project_name}-${terraform.workspace}"
+  retention_in_days = 14
 }

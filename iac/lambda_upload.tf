@@ -1,12 +1,7 @@
-# Empaquetado del código
-data "archive_file" "upload_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../src/lambdas/upload"
-  output_path = "${path.module}/upload_function.zip"
-}
 
-resource "aws_lambda_function" "upload" {
-  function_name    = "upload-lambda-${local.env}"
+# Lambda de upload
+resource "aws_lambda_function" "upload_lambda" {
+  function_name    = "upload-lambda-${terraform.workspace}"
   role             = aws_iam_role.upload_lambda_role.arn
   handler          = "index.handler"
   runtime          = "nodejs20.x"
@@ -32,15 +27,23 @@ resource "aws_lambda_function" "upload" {
   ]
 }
 
-# Permiso para que API Gateway pueda invocar esta Lambda
+# Path del codigo
+data "archive_file" "upload_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../src/lambdas/upload"
+  output_path = "${path.module}/upload_function.zip"
+}
+
+# Permisos para apigateway
 resource "aws_lambda_permission" "apigw_upload" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.upload.function_name
+  function_name = aws_lambda_function.upload_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 }
 
+# Logs de la lambda
 resource "aws_cloudwatch_log_group" "upload_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.upload.function_name}"
+  name              = "/aws/lambda/${aws_lambda_function.upload_lambda.function_name}"
   retention_in_days = 14
 }

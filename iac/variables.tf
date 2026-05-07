@@ -10,10 +10,6 @@ variable "project_name" {
   default     = "processor-image"
 }
 
-locals {
-  env = terraform.workspace
-}
-
 variable "vpc_cidr" {
   description = "IPs rango para la VPC"
   type        = string

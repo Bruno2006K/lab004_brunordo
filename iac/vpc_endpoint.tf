@@ -1,10 +1,13 @@
+
+# Endpoint para la s3
 resource "aws_vpc_endpoint" "s3" {
   vpc_id       = aws_vpc.main.id
   service_name = "com.amazonaws.${var.aws_region}.s3"
   vpc_endpoint_type = "Gateway"
 
   route_table_ids = [
-    aws_route_table.private.id
+    aws_route_table.private_a.id,
+    aws_route_table.private_b.id
   ]
 
   policy = jsonencode({
@@ -20,35 +23,47 @@ resource "aws_vpc_endpoint" "s3" {
   })
 }
 
-#------------------------------------------------------------------------------#
-resource "aws_route_table" "private" {
+#PRIVADO
+
+# Tablas de rutas privadas (A y B)
+resource "aws_route_table" "private_a" {
   vpc_id = aws_vpc.main.id
 
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_a.id
+  }
+
   tags = {
-    Name = "${var.project_name}-${local.env}-private-rt"
+    Name = "${var.project_name}-${terraform.workspace}-private-rt-a"
   }
 }
 
-# Asociación de la Subred A
+resource "aws_route_table" "private_b" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_b.id
+  }
+
+  tags = {
+    Name = "${var.project_name}-${terraform.workspace}-private-rt-b"
+  }
+}
+
+# Asociaciones privadas
 resource "aws_route_table_association" "private_a" {
   subnet_id      = aws_subnet.private_a.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private_a.id
 }
 
-# Asociación de la Subred B (Réplica)
 resource "aws_route_table_association" "private_b" {
   subnet_id      = aws_subnet.private_b.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private_b.id
 }
 
-# Asociación del S3 Endpoint a la tabla de rutas
-resource "aws_vpc_endpoint_route_table_association" "s3_main" {
-  route_table_id  = aws_route_table.private.id
-  vpc_endpoint_id = aws_vpc_endpoint.s3.id
-}
-
-#------------------------------------------------------------------------------#
-
+# Endpoint para sqs
 resource "aws_vpc_endpoint" "sqs" {
   vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.${var.aws_region}.sqs"
@@ -58,11 +73,12 @@ resource "aws_vpc_endpoint" "sqs" {
   security_group_ids  = [aws_security_group.sqs_endpoint_sg.id]
   private_dns_enabled = true
 
-  tags = { Name = "${var.project_name}-${local.env}-sqs-interface" }
+  tags = { Name = "${var.project_name}-${terraform.workspace}-sqs-interface" }
 }
 
-#------------------------------------------------------------------------------#
+#PUBLICO
 
+# Tabla de rutas publica
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -76,6 +92,7 @@ resource "aws_route_table" "public" {
   }
 }
 
+# asociaciones publicas
 resource "aws_route_table_association" "public_a" {
   subnet_id      = aws_subnet.public_a.id
   route_table_id = aws_route_table.public.id
@@ -84,4 +101,4 @@ resource "aws_route_table_association" "public_a" {
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
-}
+} 

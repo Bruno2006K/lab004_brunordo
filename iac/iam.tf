@@ -1,5 +1,6 @@
+# Role para lambda de upload
 resource "aws_iam_role" "upload_lambda_role" {
-  name = "${var.project_name}-${local.env}-upload-role"
+  name = "${var.project_name}-${terraform.workspace}-upload-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -11,7 +12,7 @@ resource "aws_iam_role" "upload_lambda_role" {
   })
 }
 
-# Políticas para Upload: Logs + VPC + S3 (Put exclusivo en uploads/)
+# Policy de upload: s3 y logs
 resource "aws_iam_role_policy" "upload_policy" {
   name = "upload-limited-policy"
   role = aws_iam_role.upload_lambda_role.id
@@ -37,21 +38,23 @@ resource "aws_iam_role_policy" "upload_policy" {
 }
 
 
+# Role para lambda de crop
 resource "aws_iam_role" "crop_lambda_role" {
-  name = "${var.project_name}-${local.env}-crop-role"
+  name = "${var.project_name}-${terraform.workspace}-crop-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Action = "sts:AssumeRole"
       Effect = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
+      Principal = { 
+        Service = "lambda.amazonaws.com" }
     }]
   })
 }
 
 
-# Políticas para Crop: S3 (Get/Put) + SQS (Full consumer) + Logs + VPC
+# Policy de crop: s3, sqs y logs
 resource "aws_iam_role_policy" "crop_policy" {
   name = "crop-limited-policy"
   role = aws_iam_role.crop_lambda_role.id
@@ -94,8 +97,9 @@ resource "aws_iam_role_policy" "crop_policy" {
   })
 }
 
+# Role para logs de api gateway
 resource "aws_iam_role" "api_gw_cloudwatch" {
-  name = "${var.project_name}-${local.env}-api-cw-role"
+  name = "${var.project_name}-${terraform.workspace}-api-cw-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
